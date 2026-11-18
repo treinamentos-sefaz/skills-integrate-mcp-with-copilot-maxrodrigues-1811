@@ -3,6 +3,106 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const signupContainer = document.getElementById("signup-container");
+  const userMenuButton = document.getElementById("user-menu-button");
+  const userMenu = document.getElementById("user-menu");
+  const teacherStatus = document.getElementById("teacher-status");
+  const loginButton = document.getElementById("login-button");
+  const logoutButton = document.getElementById("logout-button");
+  const loginDialog = document.getElementById("login-dialog");
+  const loginForm = document.getElementById("login-form");
+  const loginMessage = document.getElementById("login-message");
+  const cancelLoginButton = document.getElementById("cancel-login");
+  let teacherUsername = null;
+
+  function updateAuthUI() {
+    const isTeacher = Boolean(teacherUsername);
+    signupContainer.classList.toggle("hidden", !isTeacher);
+    loginButton.classList.toggle("hidden", isTeacher);
+    logoutButton.classList.toggle("hidden", !isTeacher);
+    teacherStatus.classList.toggle("hidden", !isTeacher);
+    teacherStatus.textContent = isTeacher ? `Signed in: ${teacherUsername}` : "";
+  }
+
+  userMenuButton.addEventListener("click", () => {
+    const isExpanded = userMenuButton.getAttribute("aria-expanded") === "true";
+    userMenuButton.setAttribute("aria-expanded", String(!isExpanded));
+    userMenu.classList.toggle("hidden", isExpanded);
+  });
+
+  loginButton.addEventListener("click", () => {
+    userMenu.classList.add("hidden");
+    userMenuButton.setAttribute("aria-expanded", "false");
+    loginMessage.className = "hidden";
+    loginMessage.textContent = "";
+    loginDialog.showModal();
+  });
+
+  cancelLoginButton.addEventListener("click", () => loginDialog.close());
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    loginMessage.className = "hidden";
+
+    try {
+      const response = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.detail || "Unable to sign in.");
+      }
+
+      teacherUsername = result.username;
+      updateAuthUI();
+      loginDialog.close();
+      loginForm.reset();
+      await fetchActivities();
+    } catch (error) {
+      loginMessage.textContent = error.message || "Unable to sign in.";
+      loginMessage.className = "message error";
+    }
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/auth/logout", { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Unable to sign out. Please try again.");
+      }
+
+      teacherUsername = null;
+      updateAuthUI();
+      userMenu.classList.add("hidden");
+      userMenuButton.setAttribute("aria-expanded", "false");
+      await fetchActivities();
+    } catch (error) {
+      messageDiv.textContent = error.message || "Unable to sign out.";
+      messageDiv.className = "message error";
+    }
+  });
+
+  async function checkSession() {
+    try {
+      const response = await fetch("/auth/me");
+      if (!response.ok) {
+        throw new Error("Unable to check teacher login.");
+      }
+      const result = await response.json();
+      teacherUsername = result.authenticated ? result.username : null;
+    } catch (error) {
+      console.error("Error checking teacher login:", error);
+      teacherUsername = null;
+    }
+    updateAuthUI();
+    await fetchActivities();
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -12,6 +112,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      while (activitySelect.options.length > 1) {
+        activitySelect.remove(1);
+      }
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -29,8 +132,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <ul class="participants-list">
                 ${details.participants
                   .map(
-                    (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                    (email) => `<li>
+                      <span class="participant-email">${email}</span>
+                      ${
+                        teacherUsername
+                          ? `<button class="delete-btn" data-activity="${name}" data-email="${email}" aria-label="Remove ${email} from ${name}">❌</button>`
+                          : ""
+                      }
+                    </li>`
                   )
                   .join("")}
               </ul>
@@ -155,6 +264,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initialize app
-  fetchActivities();
+  // Initialize authentication before rendering teacher-only controls.
+  checkSession();
 });
