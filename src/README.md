@@ -5,20 +5,38 @@ Uma aplicação FastAPI super simples que permite aos estudantes visualizar e se
 ## Funcionalidades
 
 - Visualizar todas as atividades extracurriculares disponíveis
-- Inscrever-se em atividades
+- Visualizar participantes inscritos
+- Professores autenticados podem inscrever ou remover estudantes
+
+## Acesso de professores
+
+As credenciais ficam em `src/teachers.json`, que não deve ser enviado ao Git.
+Para criar uma conta de professor, execute na raiz do repositório:
+
+```sh
+python src/create_teacher.py
+```
+
+O script solicita o nome de usuário e a senha sem exibi-la, e grava somente um
+hash PBKDF2 com salt. Os alunos podem consultar atividades e participantes sem
+entrar; somente professores autenticados podem alterar inscrições.
+
+As sessões duram oito horas e usam um cookie `HttpOnly` com `SameSite=Lax`.
+Ao publicar por HTTPS, defina `COOKIE_SECURE=true`; mantenha o valor padrão
+(`false`) apenas para desenvolvimento local em HTTP.
 
 ## Primeiros Passos
 
 1. Instale as dependências:
 
    ```
-   pip install fastapi uvicorn
+   pip install -r requirements.txt
    ```
 
 2. Execute a aplicação:
 
    ```
-   python app.py
+   uvicorn src.app:app --reload
    ```
 
 3. Abra seu navegador e vá para:
@@ -30,7 +48,11 @@ Uma aplicação FastAPI super simples que permite aos estudantes visualizar e se
 | Método | Endpoint                                                          | Descrição                                                           |
 | ------ | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
 | GET    | `/activities`                                                     | Obter todas as atividades com seus detalhes e contagem atual de participantes |
-| POST   | `/activities/{activity_name}/signup?email=student@mergington.edu` | Inscrever-se em uma atividade                                       |
+| POST   | `/auth/login`                                                      | Entrar como professor                                               |
+| GET    | `/auth/me`                                                         | Consultar a sessão atual                                            |
+| POST   | `/auth/logout`                                                     | Encerrar a sessão atual                                             |
+| POST   | `/activities/{activity_name}/signup?email=student@mergington.edu` | Professor: inscrever um estudante                                   |
+| DELETE | `/activities/{activity_name}/unregister?email=student@mergington.edu` | Professor: remover um estudante de uma atividade                  |
 
 ## Modelo de Dados
 
