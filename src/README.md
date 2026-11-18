@@ -5,6 +5,8 @@ Uma aplicação FastAPI super simples que permite aos estudantes visualizar e se
 ## Funcionalidades
 
 - Visualizar todas as atividades extracurriculares disponíveis
+- Buscar atividades por nome, categoria, descrição ou horário
+- Filtrar atividades por categoria e ordenar por nome ou horário
 - Visualizar participantes inscritos
 - Professores autenticados podem inscrever ou remover estudantes
 
@@ -62,6 +64,8 @@ A aplicação usa um modelo de dados simples com identificadores significativos:
 
    - Descrição
    - Cronograma
+   - Categoria
+   - Ordem do horário (minutos desde o início da segunda-feira), para classificação cronológica
    - Número máximo de participantes permitidos
    - Lista de emails de estudantes que estão inscritos
 

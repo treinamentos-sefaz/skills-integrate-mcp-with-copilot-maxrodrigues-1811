@@ -25,6 +25,33 @@
     <main>
       <section id="activities-container">
         <h3>Available Activities</h3>
+        <div class="activity-controls">
+          <div class="form-group search-control">
+            <label for="activity-search">Search activities:</label>
+            <input
+              type="search"
+              id="activity-search"
+              placeholder="Search by name, category, description, or schedule"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label for="category-filter">Category:</label>
+            <select id="category-filter">
+              <option value="">All categories</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="activity-sort">Sort by:</label>
+            <select id="activity-sort">
+              <option value="schedule">Schedule (earliest first)</option>
+              <option value="name">Name (A–Z)</option>
+              <option value="name-desc">Name (Z–A)</option>
+              <option value="schedule-desc">Schedule (latest first)</option>
+            </select>
+          </div>
+        </div>
+        <p id="activities-count" class="activities-count" aria-live="polite"></p>
         <div id="activities-list">
           <!-- Activities will be loaded here -->
           <p>Loading activities...</p>
